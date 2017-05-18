@@ -1,18 +1,13 @@
-KVStore API
-===========
-
-* [Basic Push and Pull](#basic-push-and-pull)
-* [Interface for list key-value pairs](#interface-for-list-key-value-pairs)
-* [Multiple machines]() TODO
+# KVStore API
 
 ## Basic Push and Pull
 
-Basic operation over multiple devices (gpus) on a single machine.
+Provides basic operation over multiple devices (GPUs) on a single device.
 
 ### Initialization
 
-Let's first consider a simple example. It initializes
-a (`int`, `NDAarray`) pair into the store, and then pull the value out.
+Let's consider a simple example. It initializes
+a (`int`, `NDArray`) pair into the store, and then pulls the value out.
 
 ```python
 >>> kv = mx.kv.create('local') # create a local kv store.
@@ -27,7 +22,7 @@ a (`int`, `NDAarray`) pair into the store, and then pull the value out.
 
 ### Push, Aggregation, and Updater
 
-For any key has been initialized, we can push a new value with the same shape to the key.
+For any key that's been initialized, you can push a new value with the same shape to the key, as follows:
 
 ```python
 >>> kv.push(3, mx.nd.ones(shape)*8)
@@ -37,9 +32,9 @@ For any key has been initialized, we can push a new value with the same shape to
  [ 8.  8.  8.]]
 ```
 
-The data for pushing can be on any device. Furthermore, we can push multiple
-values into the same key, where KVStore will first sum all these
-values and then push the aggregated value.
+The data that you want to push can be stored on any device. Furthermore, you can push multiple
+values into the same key, where KVStore first sums all of these
+values, and then pushes the aggregated value, as follows:
 
 ```python
 >>> gpus = [mx.gpu(i) for i in range(4)]
@@ -51,8 +46,8 @@ values and then push the aggregated value.
  [ 4.  4.  4.]]
 ```
 
-For each push, KVStore applies the pushed value into the value stored by a
-`updater`. The default updater is `ASSGIN`, we can replace the default one to
+For each push command, KVStore applies the pushed value to the value stored by an
+`updater`. The default updater is `ASSIGN`. You can replace the default to
 control how data is merged.
 
 ```python
@@ -74,8 +69,8 @@ update on key: 3
 
 ### Pull
 
-We already see how to pull a single key-value pair. Similar to push, we can also
-pull the value into several devices by a single call.
+You've already seen how to pull a single key-value pair. Similar to the way that you use the push command, you can
+pull the value into several devices with a single call.
 
 ```python
 >>> b = [mx.nd.ones(shape, gpu) for gpu in gpus]
@@ -85,10 +80,10 @@ pull the value into several devices by a single call.
  [ 6.  6.  6.]]
 ```
 
-## Interface for list key-value pairs
+## List Key-Value Pairs
 
-All operations introduced so far are about a single key. KVStore also provides
-the interface for a list of key-value pairs. For single device:
+All of the operations that we've discussed so far are performed on a single key. KVStore also provides
+the interface for generating a list of key-value pairs. For a single device, use the following:
 
 ```python
 >>> keys = [5, 7, 9]
@@ -104,7 +99,7 @@ update on key: 9
  [ 3.  3.  3.]]
 ```
 
-For multi-devices:
+For multiple devices:
 
 ```python
 >>> b = [[mx.nd.ones(shape, gpu) for gpu in gpus]] * len(keys)
@@ -118,23 +113,15 @@ update on key: 9
  [ 11.  11.  11.]]
 ```
 
-```eval_rst
-.. raw:: html
-
-    <script type="text/javascript" src='../../_static/js/auto_module_index.js'></script>
-```
 
 
 ## API Reference
 
+<script type="text/javascript" src='../../_static/js/auto_module_index.js'></script>
+
 ```eval_rst
 .. automodule:: mxnet.kvstore
     :members:
-
-.. raw:: html
-
-    <script>auto_index("mxnet.kvstore");</script>
 ```
 
-# Recommended Next Steps
-* [Python Tutorials](http://mxnet.io/tutorials/index.html#Python-Tutorials)
+<script>auto_index("api-reference");</script>

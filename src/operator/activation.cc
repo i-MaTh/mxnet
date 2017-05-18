@@ -7,7 +7,7 @@
 #include "./activation-inl.h"
 #include "./mshadow_op.h"
 #if MXNET_USE_MKL2017 == 1
-#include <mxnet/mkl_memory.h>
+#include <mkl_memory.h>
 #include "./mkl/mkl_memory-inl.h"
 #include "./mkl/mkl_relu-inl.h"
 #endif  // MXNET_USE_MKL2017
@@ -28,7 +28,8 @@ Operator *CreateOp<cpu>(ActivationParam param, int dtype) {
           break;
       }
   }
-
+  if (enableMKLWarnGenerated())
+    LOG(INFO) << MKLReluOp<cpu, float>::getName() << " Skip MKL optimization";
 #endif
   MSHADOW_REAL_TYPE_SWITCH(dtype, DType, {
     switch (param.act_type) {
@@ -64,20 +65,18 @@ Operator *ActivationProp::CreateOperatorEx(Context ctx, std::vector<TShape> *in_
 DMLC_REGISTER_PARAMETER(ActivationParam);
 
 MXNET_REGISTER_OP_PROPERTY(Activation, ActivationProp)
-.describe(R"(Elementwise activation function.
+.describe(R"code(Applies an activation function element-wise to the input.
 
-The following activation types are supported (operations are applied elementwisely to each
-scalar of the input tensor):
+The following activation functions are supported:
 
-- `relu`: Rectified Linear Unit, `y = max(x, 0)`
-- `sigmoid`: `y = 1 / (1 + exp(-x))`
-- `tanh`: Hyperbolic tangent, `y = (exp(x) - exp(-x)) / (exp(x) + exp(-x))`
-- `softrelu`: Soft ReLU, or SoftPlus, `y = log(1 + exp(x))`
+- `relu`: Rectified Linear Unit, :math:`y = max(x, 0)`
+- `sigmoid`: :math:`y = \frac{1}{1 + exp(-x)}`
+- `tanh`: Hyperbolic tangent, :math:`y = \frac{exp(x) - exp(-x)}{exp(x) + exp(-x)}`
+- `softrelu`: Soft ReLU, or SoftPlus, :math:`y = log(1 + exp(x))`
 
-See `LeakyReLU` for other activations with parameters.
-)")
+)code" ADD_FILELINE)
+.add_argument("data", "NDArray-or-Symbol", "Input array to activation function.")
 .add_arguments(ActivationParam::__FIELDS__());
 
 }  // namespace op
 }  // namespace mxnet
-

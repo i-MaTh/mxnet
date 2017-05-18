@@ -11,36 +11,19 @@
 #include <mxnet/ndarray.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
+#include <dmlc/optional.h>
 #include <mshadow/tensor.h>
+#include <climits>
 #include <utility>
 #include <string>
 #include <vector>
 #include <queue>
 #include <algorithm>
 #include "./inst_vector.h"
+#include "./image_iter_common.h"
 
 namespace mxnet {
 namespace io {
-// Define prefetcher parameters
-struct PrefetcherParam : public dmlc::Parameter<PrefetcherParam> {
-  /*! \brief number of prefetched batches */
-  size_t prefetch_buffer;
-  /*! \brief data type */
-  int dtype;
-
-  // declare parameters
-  DMLC_DECLARE_PARAMETER(PrefetcherParam) {
-    DMLC_DECLARE_FIELD(prefetch_buffer).set_default(4)
-        .describe("Backend Param: Number of prefetched parameters");
-    DMLC_DECLARE_FIELD(dtype)
-      .add_enum("float32", mshadow::kFloat32)
-      .add_enum("float64", mshadow::kFloat64)
-      .add_enum("float16", mshadow::kFloat16)
-      .set_default(mshadow::default_type_flag)
-      .describe("Data type.");
-  }
-};
-
 // iterator on image recordio
 class PrefetcherIter : public IIterator<DataBatch> {
  public:
@@ -79,17 +62,22 @@ class PrefetcherIter : public IIterator<DataBatch> {
           (*dptr)->data.resize(batch.data.size());
           (*dptr)->index.resize(batch.batch_size);
           for (size_t i = 0; i < batch.data.size(); ++i) {
+            auto dtype = param_.dtype
+                             ? param_.dtype.value()
+                             : batch.data[i].type_flag_;
             (*dptr)->data.at(i) = NDArray(batch.data[i].shape_,
                                           Context::CPU(), false,
-                                          param_.dtype);
+                                          dtype);
           }
         }
         CHECK(batch.data.size() == (*dptr)->data.size());
         // copy data over
         for (size_t i = 0; i < batch.data.size(); ++i) {
           CHECK_EQ((*dptr)->data.at(i).shape(), batch.data[i].shape_);
-          mshadow::Copy(((*dptr)->data)[i].data().FlatTo2D<cpu, real_t>(),
-                        batch.data[i].FlatTo2D<cpu, real_t>());
+          MSHADOW_TYPE_SWITCH(batch.data[i].type_flag_, DType, {
+              mshadow::Copy(((*dptr)->data)[i].data().FlatTo2D<cpu, DType>(),
+                        batch.data[i].FlatTo2D<cpu, DType>());
+          });
           (*dptr)->num_batch_padd = batch.num_batch_padd;
         }
         if (batch.inst_index) {
